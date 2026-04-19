@@ -4,11 +4,12 @@ A small Cloudflare Worker that exposes the download count of a public GitHub
 Container Registry package so [shields.io](https://shields.io) can render it
 as a badge.
 
-Self-hosted for [Houndarr](https://github.com/av1155/houndarr) so the badge
-does not depend on a third-party service remaining online. Forked from
-[eliasbenb/ghcr-badge](https://github.com/eliasbenb/ghcr-badge) (MIT).
+Forked from [eliasbenb/ghcr-badge](https://github.com/eliasbenb/ghcr-badge)
+(MIT). Ships with an owner allowlist (`ALLOWED_OWNERS` in `src/index.ts`) so
+a deployment only serves badges for the owners you choose, preventing others
+from piggybacking on your Worker's free-tier quota.
 
-Live deployment: `https://houndarr-ghcr-badge.<your-cf-subdomain>.workers.dev`
+Live deployment: `https://ghcr-badge.<your-cf-subdomain>.workers.dev`
 
 ## Endpoints
 
@@ -23,15 +24,17 @@ Responses are cached for 3 hours. Append `?no-cache` to bypass.
 
 ## Example
 
+Replace `<owner>` and `<package>` with an allowlisted owner and the package name:
+
 ```bash
-curl https://houndarr-ghcr-badge.<subdomain>.workers.dev/api/av1155/houndarr
+curl https://ghcr-badge.<subdomain>.workers.dev/api/<owner>/<package>
 # {"downloadCount":"48.3K","downloadCountRaw":48321,"success":true,...}
 ```
 
 For full control over badge style, point shields.io `dynamic/json` at the API:
 
 ```markdown
-[![GHCR pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhoundarr-ghcr-badge.<subdomain>.workers.dev%2Fapi%2Fav1155%2Fhoundarr&query=downloadCount&label=ghcr%20pulls&color=2496ed&logo=docker&logoColor=white&style=flat)](https://github.com/av1155/houndarr/pkgs/container/houndarr)
+[![GHCR pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.<subdomain>.workers.dev%2Fapi%2F<owner>%2F<package>&query=downloadCount&label=ghcr%20pulls&color=2496ed&logo=docker&logoColor=white&style=flat)](https://github.com/<owner>/<package>/pkgs/container/<package>)
 ```
 
 ## Develop and deploy

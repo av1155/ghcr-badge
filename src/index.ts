@@ -3,6 +3,18 @@ import { cache } from "hono/cache";
 
 interface Env {}
 
+const ALLOWED_OWNERS = new Set(["av1155"]);
+
+function forbiddenOwner(c: Context<{ Bindings: Env }>) {
+    return c.json(
+        {
+            success: false,
+            error: `This worker only serves packages owned by ${[...ALLOWED_OWNERS].join(", ")}. Fork https://github.com/av1155/ghcr-badge to deploy your own.`,
+        },
+        403,
+    );
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 function extractDownloadStats(html: string) {
@@ -89,6 +101,7 @@ async function handleApiRequest(c: Context<{ Bindings: Env }>) {
         repo?: string;
         pkg: string;
     };
+    if (!ALLOWED_OWNERS.has(owner)) return forbiddenOwner(c);
     const githubUrl = repo
         ? `https://github.com/${owner}/${repo}/pkgs/container/${pkg}`
         : `https://github.com/users/${owner}/packages/container/package/${pkg}`;
@@ -160,14 +173,8 @@ app.get("/", (c) => {
                 <li><a href="/shield/:owner/:repo/:pkg"><code>/shield/:owner/:repo/:pkg</code></a> - Get a dynamic badge for repo package Docker pulls.</li>
                 <li><a href="/shield/:owner/:pkg"><code>/shield/:owner/:pkg</code></a> - Get a dynamic badge for user package Docker pulls.</li>
             </ul>
-            <p>Example:</p>
-            <ul>
-                <li><a href="/api/av1155/houndarr/houndarr"><code>/api/av1155/houndarr/houndarr</code></a> - Get badge stats for <a href="https://github.com/av1155/houndarr" target="_blank">av1155/houndarr</a>.</li>
-                <li><a href="/api/av1155/houndarr"><code>/api/av1155/houndarr</code></a> - Get badge stats for <a href="https://github.com/users/av1155/packages/container/package/houndarr" target="_blank">user-scoped package page</a>.</li>
-                <li><a href="/shield/av1155/houndarr/houndarr"><code>/shield/av1155/houndarr/houndarr</code></a> - Get a badge for Docker pulls for <a href="https://github.com/av1155/houndarr" target="_blank">av1155/houndarr</a>.</li>
-                <li><a href="/shield/av1155/houndarr"><code>/shield/av1155/houndarr</code></a> - Get a badge for Docker pulls for <a href="https://github.com/users/av1155/packages/container/package/houndarr" target="_blank">user-scoped package page</a>.</li>
-            </ul>
-            <p>Originally by <a href="https://github.com/eliasbenb/ghcr-badge" target="_blank">eliasbenb/ghcr-badge</a>; this fork is maintained by <a href="https://github.com/av1155" target="_blank">av1155</a>.</p>
+            <p><strong>Note:</strong> this instance restricts access to an allowlist of owners. Requests for owners not in the allowlist return 403. To get badges for your own packages, fork <a href="https://github.com/av1155/ghcr-badge" target="_blank">the repo</a> and deploy your own Cloudflare Worker with your owner in <code>ALLOWED_OWNERS</code>.</p>
+            <p>Forked from <a href="https://github.com/eliasbenb/ghcr-badge" target="_blank">eliasbenb/ghcr-badge</a> (MIT).</p>
         </body>
         </html>
     `);
@@ -201,6 +208,7 @@ app.get(
 
 app.get("/shield/:owner/:repo/:pkg", async (c) => {
     const { owner, repo, pkg } = c.req.param();
+    if (!ALLOWED_OWNERS.has(owner)) return forbiddenOwner(c);
 
     const reqUrl = new URL(c.req.url);
 
@@ -212,6 +220,7 @@ app.get("/shield/:owner/:repo/:pkg", async (c) => {
 
 app.get("/shield/:owner/:pkg", async (c) => {
     const { owner, pkg } = c.req.param();
+    if (!ALLOWED_OWNERS.has(owner)) return forbiddenOwner(c);
 
     const reqUrl = new URL(c.req.url);
 
