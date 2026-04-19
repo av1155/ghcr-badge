@@ -39,7 +39,7 @@ For full control over badge style, point shields.io `dynamic/json` at the API:
 ```bash
 pnpm install
 pnpm dev          # wrangler dev on 127.0.0.1
-pnpm deploy       # wrangler deploy to Cloudflare
+pnpm run deploy   # wrangler deploy to Cloudflare (the explicit `run` avoids pnpm's reserved `deploy` builtin)
 ```
 
 `pnpm deploy` requires `wrangler login` once; subsequent deploys reuse the cached credentials.
