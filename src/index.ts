@@ -120,53 +120,6 @@ async function handleApiRequest(c: Context<{ Bindings: Env }>) {
     }
 }
 
-async function handleAniBridgeApiRequest(c: Context<{ Bindings: Env }>) {
-    const urls = [
-        "https://github.com/anibridge/anibridge/pkgs/container/anibridge",
-        "https://github.com/users/eliasbenb/packages/container/package/plexanibridge",
-    ];
-
-    try {
-        const {
-            downloadCount,
-            downloadCountRaw,
-            urls: resolvedUrls,
-        } = await fetchPackageStats(urls);
-
-        return c.json(
-            {
-                downloadCount,
-                downloadCountRaw,
-                repo: {
-                    url: resolvedUrls[0],
-                    urls: resolvedUrls,
-                    owner: "anibridge",
-                    repo: "anibridge",
-                    package: "anibridge",
-                },
-                success: downloadCount !== null,
-                timestamp: new Date().toISOString(),
-            },
-            200,
-        );
-    } catch (error) {
-        return c.json(
-            {
-                repo: {
-                    url: urls[0],
-                    owner: "anibridge",
-                    repo: "anibridge",
-                    package: "anibridge",
-                },
-                success: false,
-                error: error instanceof Error ? error.message : String(error),
-                timestamp: new Date().toISOString(),
-            },
-            500,
-        );
-    }
-}
-
 app.use("*", async (c, next) => {
     await next();
     c.header("Access-Control-Allow-Origin", "*");
@@ -209,29 +162,16 @@ app.get("/", (c) => {
             </ul>
             <p>Example:</p>
             <ul>
-                <li><a href="/api/eliasbenb/PlexAniBridge/plexanibridge"><code>/api/eliasbenb/PlexAniBridge/plexanibridge</code></a> - Get badge stats for <a href="https://github.com/eliasbenb/PlexAniBridge" target="_blank">eliasbenb/PlexAniBridge</a>.</li>
-                <li><a href="/api/eliasbenb/plexanibridge"><code>/api/eliasbenb/plexanibridge</code></a> - Get badge stats for <a href="https://github.com/users/eliasbenb/packages/container/package/plexanibridge" target="_blank">user-scoped package page</a>.</li>
-                <li><a href="/shield/eliasbenb/PlexAniBridge/plexanibridge"><code>/shield/eliasbenb/PlexAniBridge/plexanibridge</code></a> - Get a badge for Docker pulls for <a href="https://github.com/eliasbenb/PlexAniBridge" target="_blank">eliasbenb/PlexAniBridge</a>.</li>
-                <li><a href="/shield/eliasbenb/plexanibridge"><code>/shield/eliasbenb/plexanibridge</code></a> - Get a badge for Docker pulls for <a href="https://github.com/users/eliasbenb/packages/container/package/plexanibridge" target="_blank">user-scoped package page</a>.</li>
+                <li><a href="/api/av1155/houndarr/houndarr"><code>/api/av1155/houndarr/houndarr</code></a> - Get badge stats for <a href="https://github.com/av1155/houndarr" target="_blank">av1155/houndarr</a>.</li>
+                <li><a href="/api/av1155/houndarr"><code>/api/av1155/houndarr</code></a> - Get badge stats for <a href="https://github.com/users/av1155/packages/container/package/houndarr" target="_blank">user-scoped package page</a>.</li>
+                <li><a href="/shield/av1155/houndarr/houndarr"><code>/shield/av1155/houndarr/houndarr</code></a> - Get a badge for Docker pulls for <a href="https://github.com/av1155/houndarr" target="_blank">av1155/houndarr</a>.</li>
+                <li><a href="/shield/av1155/houndarr"><code>/shield/av1155/houndarr</code></a> - Get a badge for Docker pulls for <a href="https://github.com/users/av1155/packages/container/package/houndarr" target="_blank">user-scoped package page</a>.</li>
             </ul>
-            <p>Visit the <a href="https://github.com/eliasbenb/ghcr-badge" target="_blank">GitHub repository</a> for more details.</p>
+            <p>Originally by <a href="https://github.com/eliasbenb/ghcr-badge" target="_blank">eliasbenb/ghcr-badge</a>; this fork is maintained by <a href="https://github.com/av1155" target="_blank">av1155</a>.</p>
         </body>
         </html>
     `);
 });
-
-app.get(
-    "/api/anibridge/anibridge/anibridge",
-    cache({
-        cacheName: "github-pkg-stats",
-        cacheControl: "max-age=10800", // 3 hours
-        keyGenerator(c) {
-            const noCache = c.req.query("no-cache") !== undefined;
-            return noCache ? `${c.req.url}-${Date.now().toString()}` : c.req.url;
-        },
-    }),
-    handleAniBridgeApiRequest,
-);
 
 app.get(
     "/api/:owner/:repo/:pkg",

@@ -1,68 +1,52 @@
 # ghcr-badge
 
-`ghcr-badge` is a simple API service that can be used to generate [shields.io](https://shields.io) badges displaying the download count of a package hosted on the GitHub Container Registry.
+A small Cloudflare Worker that exposes the download count of a public GitHub
+Container Registry package so [shields.io](https://shields.io) can render it
+as a badge.
+
+Self-hosted for [Houndarr](https://github.com/av1155/houndarr) so the badge
+does not depend on a third-party service remaining online. Forked from
+[eliasbenb/ghcr-badge](https://github.com/eliasbenb/ghcr-badge) (MIT).
+
+Live deployment: `https://houndarr-ghcr-badge.<your-cf-subdomain>.workers.dev`
 
 ## Endpoints
 
-### Get Repo Package Download Stats
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/api/:owner/:repo/:pkg` | JSON download stats for a repo-scoped package |
+| `GET` | `/api/:owner/:pkg` | JSON download stats for a user-scoped package |
+| `GET` | `/shield/:owner/:repo/:pkg` | Redirects to a default shields.io Docker Pulls badge |
+| `GET` | `/shield/:owner/:pkg` | Same, for user-scoped packages |
 
-- **Endpoint**: `/api/:owner/:repo/:pkg`
-- **Description**: Fetches the download statistics for the specified package.
-- **Example**: `/api/eliasbenb/PlexAniBridge/plexanibridge`
-
-### Get User Package Download Stats
-
-- **Endpoint**: `/api/:owner/:pkg`
-- **Description**: Fetches stats for user-scoped package pages (`/users/:owner/packages/container/package/:pkg`).
-- **Example**: `/api/eliasbenb/plexanibridge`
-
-### Get a Repo package Docker Pulls Badge
-
-- **Endpoint**: `/shield/:owner/:repo/:pkg`
-- **Description**: Generates a shields.io badge for the specified package's Docker pulls.
-- **Example**: `/shield/eliasbenb/PlexAniBridge/plexanibridge`
-
-### Get a User Package Docker Pulls Badge
-
-- **Endpoint**: `/shield/:owner/:pkg`
-- **Description**: Generates a shields.io badge for user-scoped package pages.
-- **Example**: `/shield/eliasbenb/plexanibridge`
+Responses are cached for 3 hours. Append `?no-cache` to bypass.
 
 ## Example
 
-To get the get the stats for a repository-scoped package, you can make a GET request to the API endpoint:
-
 ```bash
-curl https://ghcr-badge.elias.eu.org/api/eliasbenb/PlexAniBridge/plexanibridge
+curl https://houndarr-ghcr-badge.<subdomain>.workers.dev/api/av1155/houndarr
+# {"downloadCount":"48.3K","downloadCountRaw":48321,"success":true,...}
 ```
 
-User-scoped package page format:
-
-```bash
-curl https://ghcr-badge.elias.eu.org/api/eliasbenb/plexanibridge
-```
-
-To embed the default badge, which displays the download count, in markdown:
+For full control over badge style, point shields.io `dynamic/json` at the API:
 
 ```markdown
-![Docker Pulls](https://ghcr-badge.elias.eu.org/shield/eliasbenb/PlexAniBridge/plexanibridge)
+[![GHCR pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhoundarr-ghcr-badge.<subdomain>.workers.dev%2Fapi%2Fav1155%2Fhoundarr&query=downloadCount&label=ghcr%20pulls&color=2496ed&logo=docker&logoColor=white&style=flat)](https://github.com/av1155/houndarr/pkgs/container/houndarr)
 ```
 
-For user-scoped package pages:
+## Develop and deploy
 
-```markdown
-![Docker Pulls](https://ghcr-badge.elias.eu.org/shield/eliasbenb/plexanibridge)
+```bash
+pnpm install
+pnpm dev          # wrangler dev on 127.0.0.1
+pnpm deploy       # wrangler deploy to Cloudflare
 ```
 
-![Docker Pulls](https://ghcr-badge.elias.eu.org/shield/eliasbenb/PlexAniBridge/plexanibridge)
+`pnpm deploy` requires `wrangler login` once; subsequent deploys reuse the cached credentials.
 
-You can also write your own badge with shields.io's [dynamic JSON badge](https://shields.io/badges/dynamic-json-badge) and have it point to the `/api` endpoint. E.g.:
+## GitHub package URL styles
 
-```
-https://img.shields.io/badge/dynamic/json?url=https://ghcr-badge.elias.eu.org/api/eliasbenb/PlexAniBridge/plexanibridge&query=downloadCount
-```
-
-The service supports both GitHub package URL styles:
-
-- Repository-scoped: `https://github.com/:owner/:repo/pkgs/container/:pkg`
-- User-scoped: `https://github.com/users/:owner/packages/container/package/:pkg`
+| Style | URL pattern | Endpoint path |
+| ----- | ----------- | ------------- |
+| Repo-scoped | `https://github.com/:owner/:repo/pkgs/container/:pkg` | `/api/:owner/:repo/:pkg` |
+| User-scoped | `https://github.com/users/:owner/packages/container/package/:pkg` | `/api/:owner/:pkg` |
